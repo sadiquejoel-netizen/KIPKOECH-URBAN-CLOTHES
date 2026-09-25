@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Urban Threads | Clothing Store</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+  body { background: #f6f6f6; color: #222; }
+
+  /* ===== Navbar ===== */
+  header {
+    background: #111; color: #fff; position: sticky; top: 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 40px;
+  }
+  header h1 { font-size: 22px; letter-spacing: 2px; }
+  nav a { color: #ddd; text-decoration: none; margin-left: 25px; font-size: 15px; }
+  nav a:hover { color: #fff; }
+  #cart-btn { background: #e63946; border: none; color: #fff; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+
+  /* ===== Hero ===== */
+  .hero {
+    background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)),
+      url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1400') center/cover;
+    height: 60vh; display: flex; flex-direction: column; justify-content: center;
+    align-items: center; color: #fff; text-align: center;
+  }
+  .hero h2 { font-size: 42px; margin-bottom: 10px; }
+  .hero p { font-size: 18px; margin-bottom: 20px; }
+  .hero button {
+    background: #e63946; color: #fff; border: none; padding: 14px 32px;
+    font-size: 16px; border-radius: 30px; cursor: pointer;
+  }
+
+  /* ===== Filters ===== */
+  .filters { text-align: center; margin: 30px 0 10px; }
+  .filters button {
+    background: #fff; border: 1px solid #ccc; padding: 8px 18px; margin: 4px;
+    border-radius: 20px; cursor: pointer;
+  }
+  .filters button.active { background: #111; color: #fff; border-color: #111; }
+
+  /* ===== Product grid ===== */
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 25px; padding: 25px 40px 60px; max-width: 1200px; margin: auto;
+  }
+  .card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); transition: transform .2s; }
+  .card:hover { transform: translateY(-5px); }
+  .card img { width: 100%; height: 260px; object-fit: cover; }
+  .card-body { padding: 15px; }
+  .card-body h3 { font-size: 16px; margin-bottom: 5px; }
+  .price { color: #e63946; font-weight: bold; margin-bottom: 10px; }
+  .card-body button {
+    width: 100%; background: #111; color: #fff; border: none;
+    padding: 10px; border-radius: 6px; cursor: pointer;
+  }
+  .card-body button:hover { background: #e63946; }
+
+  /* ===== Cart drawer ===== */
+  #cart-panel {
+    position: fixed; right: -360px; top: 0; width: 340px; height: 100%;
+    background: #fff; box-shadow: -3px 0 12px rgba(0,0,0,.2);
+    transition: right .3s; padding: 20px; overflow-y: auto; z-index: 20;
+  }
+  #cart-panel.open { right: 0; }
+  .cart-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 14px; }
+  .cart-item span { cursor: pointer; color: #e63946; }
+  #close-cart { float: right; background: none; border: none; font-size: 20px; cursor: pointer; }
+
+  footer { background: #111; color: #aaa; text-align: center; padding: 25px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>KIPKOECH URBANS COLLECTION</h1>
+  <nav>
+    <a href="#shop">Shop</a>
+    <a href="#">Men</a>
+    <a href="#">Women</a>
+    <a href="#">Contact</a>
+  </nav>
+  <button id="cart-btn" onclick="toggleCart()">🛒 Cart (<span id="cart-count">0</span>)</button>
+</header>
+
+<section class="hero">
+  <h2>New Season Collection</h2>
+  <p>Fresh styles. Fair prices. Delivered to your door.</p>
+  <button onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">Shop Now</button>
+</section>
+
+<div class="filters" id="shop">
+  <button class="active" onclick="filterProducts('all', this)">All</button>
+  <button onclick="filterProducts('men', this)">Men</button>
+  <button onclick="filterProducts('women', this)">Women</button>
+  <button onclick="filterProducts('shoes', this)">Shoes</button>
+</div>
+
+<main class="grid" id="product-grid"></main>
+
+<!-- Cart panel -->
+<div id="cart-panel">
+  <button id="close-cart" onclick="toggleCart()">✕</button>
+  <h3>Your Cart</h3>
+  <div id="cart-items"></div>
+  <h4 style="margin-top:15px;">Total: KES <span id="cart-total">0</span></h4>
+  <button style="width:100%;background:#e63946;color:#fff;border:none;padding:12px;border-radius:6px;margin-top:10px;cursor:pointer;"
+          onclick="checkout()">Checkout (M-Pesa)</button>
+</div>
+
+<footer>
+  <p>© 2026 KIPKOECH Urban Threads · Nairobi, Kenya · Tel: 0711 314607</p>
+</footer>
+
+<script>
+const products = [
+  { id: 1, name: "Classic White Tee",   price: 800,  cat: "men",   img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500" },
+  { id: 2, name: "Denim Jacket",        price: 3200, cat: "men",   img: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500" },
+  { id: 3, name: "Floral Summer Dress", price: 2500, cat: "women", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500" },
+  { id: 4, name: "High Heels",          price: 2800, cat: "shoes", img: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=500" },
+  { id: 5, name: "Sneakers",            price: 4500, cat: "shoes", img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500" },
+  { id: 6, name: "Knit Sweater",        price: 2100, cat: "women", img: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500" }
+];
+
+let cart = [];
+
+function renderProducts(list) {
+  document.getElementById("product-grid").innerHTML = list.map(p => `
+    <div class="card">
+      <img src="${p.img}" alt="${p.name}">
+      <div class="card-body">
+        <h3>${p.name}</h3>
+        <p class="price">KES ${p.price.toLocaleString()}</p>
+        <button onclick="addToCart(${p.id})">Add to Cart</button>
+      </div>
+    </div>`).join("");
+}
+
+function filterProducts(cat, btn) {
+  document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderProducts(cat === "all" ? products : products.filter(p => p.cat === cat));
+}
+
+function addToCart(id) {
+  cart.push(products.find(p => p.id === id));
+  updateCart();
+}
+
+function removeFromCart(index) {
+  cart.splice(index, 1);
+  updateCart();
+}
+
+function updateCart() {
+  document.getElementById("cart-count").textContent = cart.length;
+  document.getElementById("cart-items").innerHTML = cart.length
+    ? cart.map((item, i) => `
+        <div class="cart-item">
+          <div>${item.name}<br><small>KES ${item.price.toLocaleString()}</small></div>
+          <span onclick="removeFromCart(${i})">✕</span>
+        </div>`).join("")
+    : "<p style='color:#888'>Cart is empty</p>";
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  document.getElementById("cart-total").textContent = total.toLocaleString();
+}
+
+function toggleCart() {
+  document.getElementById("cart-panel").classList.toggle("open");
+}
+
+function checkout() {
+  if (!cart.length) return alert("Your cart is empty!");
+  alert("Order placed! You'll receive an M-Pesa prompt shortly.");
+  cart = [];
+  updateCart();
+  toggleCart();
+}
+
+renderProducts(products);
+updateCart();
+</script>
+</body>
+</html>
